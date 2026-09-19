@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZipStream | Professional Multi-Part Video Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZipStream | Premium Mobile Video Platform</title>
     <!-- Tailwind CSS for Premium UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -28,10 +28,11 @@
         video::-internal-media-controls-download-button { display:none; }
         video::-webkit-media-controls-enclosure { overflow:hidden; }
         video::-webkit-media-controls-panel { width: calc(100% + 30px); }
+        body { -webkit-tap-highlight-color: transparent; }
     </style>
 
     <script>
-        // নিরাপদ এবং ছোট JSON কম্প্রেশন ইঞ্জিন (URL-Safe Base64)
+        // নিরাপদ এবং ছোট JSON কম্প্রেশন ইঞ্জিন
         const URLDataEngine = {
             encode: function(obj) {
                 return btoa(encodeURIComponent(JSON.stringify(obj)));
@@ -69,8 +70,8 @@
                 const partsContainer = document.getElementById('video-parts-list');
                 loadedVideoParts.forEach((url, index) => {
                     const btn = document.createElement('button');
-                    btn.className = `part-btn px-5 py-3 rounded-xl font-bold border transition flex items-center gap-2 cursor-pointer ${index === 0 ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`;
-                    btn.innerHTML = `<i class="fa-solid fa-circle-play text-sm"></i> Part ${index + 1}`;
+                    btn.className = `part-btn w-full px-4 py-3 text-sm font-bold border rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${index === 0 ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'bg-slate-800 border-slate-700 text-slate-300 active:bg-slate-700'}`;
+                    btn.innerHTML = `<i class="fa-solid fa-circle-play text-xs"></i> Part ${index + 1}`;
                     btn.onclick = () => playSelectedPart(index, btn);
                     partsContainer.appendChild(btn);
                 });
@@ -81,16 +82,12 @@
         });
 
         function playSelectedPart(index, activeBtn) {
-            // সকল বাটনের একটিভ স্টেট রিসেট
             document.querySelectorAll('.part-btn').forEach(btn => {
-                btn.className = "part-btn px-5 py-3 rounded-xl font-bold border bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2 cursor-pointer";
+                btn.className = "part-btn w-full px-4 py-3 text-sm font-bold border bg-slate-800 border-slate-700 text-slate-300 active:bg-slate-700 transition flex items-center justify-center gap-2 cursor-pointer";
             });
-            // নির্বাচিত বাটনকে একটিভ করা
-            activeBtn.className = "part-btn px-5 py-3 rounded-xl font-bold border bg-indigo-600 border-indigo-500 text-white shadow-lg transition flex items-center gap-2 cursor-pointer";
+            activeBtn.className = "part-btn w-full px-4 py-3 text-sm font-bold border bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2 cursor-pointer";
             
-            // লোডার অন করে পার্ট চেঞ্জ করা
             document.getElementById('loading-screen').classList.remove('hidden');
-            document.getElementById('player-view-wrapper').classList.add('hidden');
             playPartSource(index);
         }
 
@@ -105,18 +102,16 @@
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('player-view-wrapper').classList.remove('hidden');
                 videoPlayer.play().catch(() => {
-                    // যদি অটো-প্লে ব্লক হয়, তবে সাধারণ প্লে বাটন এনাবল থাকবে
                     videoPlayer.controls = true;
                 });
             };
 
             videoPlayer.onerror = function() {
-                alert("এই পার্টের ভিডিও ফাইলটি লোড করা যাচ্ছে না।");
+                alert("ভিডিও ফাইলটি লোড করা যাচ্ছে না।");
                 document.getElementById('loading-screen').classList.add('hidden');
             };
         }
 
-        // কাস্টম সিকিউরিটি প্রটেকশন (ডাউনলোড ও রাইট ক্লিক নিষ্ক্রিয় করা)
         window.addEventListener('contextmenu', e => {
             if(e.target.tagName === 'VIDEO') e.preventDefault();
         });
@@ -130,42 +125,41 @@
             <div></div>
             <div></div>
         </div>
-        <h2 class="text-indigo-400 font-semibold text-xl tracking-wide animate-pulse">Preparing Premium Stream...</h2>
-        <p class="text-slate-500 text-sm mt-2">ভিডিও লোড হচ্ছে, অনুগ্রহ করে একটু অপেক্ষা করুন</p>
+        <h2 class="text-indigo-400 font-semibold text-lg tracking-wide animate-pulse">Loading Stream...</h2>
     </div>
 
-    <!-- প্রফেশনাল মুভি থিয়েটার মোড প্লেয়ার ইন্টারফেস -->
+    <!-- মোবাইল ও পিসি ফ্রেন্ডলি প্লেয়ার থিয়েটার ইন্টারফেস -->
     <div id="player-view-wrapper" class="fixed inset-0 bg-slate-950 z-40 hidden flex flex-col">
-        <!-- প্লেয়ার হেডার বার -->
-        <div class="w-full bg-slate-900/60 backdrop-blur border-b border-slate-800 px-6 py-4 flex justify-between items-center z-50">
-            <div class="flex items-center gap-3">
-                <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+        <!-- প্লেয়ার হেডার বার (মোবাইলে ছোট ও ছিমছাম) -->
+        <div class="w-full bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex justify-between items-center z-50">
+            <div class="flex items-center gap-2">
+                <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
                     <i class="fa-solid fa-house"></i> Home
                 </a>
-                <span class="text-slate-400 text-sm font-medium border-l border-slate-700 pl-3 hidden sm:inline">ZipStream Secure Cinema</span>
             </div>
-            <div class="text-indigo-400 font-bold text-lg"><i class="fa-solid fa-shield-halved"></i> Protected Mode</div>
+            <div class="text-indigo-400 font-bold text-xs bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">
+                <i class="fa-solid fa-shield-halved"></i> Protected
+            </div>
         </div>
 
-        <!-- মেইন স্ট্রিমিং ও পার্ট এরিয়া -->
-        <div class="flex-grow flex flex-col lg:flex-row overflow-hidden">
-            <!-- বামে: প্রো ভিডিও প্লেয়ার স্ক্রিন -->
-            <div class="flex-grow bg-black flex items-center justify-center relative p-2 lg:p-4">
-                <video id="customVideoPlayer" class="w-full h-full max-h-[80vh] rounded-xl object-contain shadow-2xl" controls controlsList="nodownload nofullscreen" playsinline autocomplete="off">
+        <!-- মেইন এরিয়া (পিসিতে পাশে পাশে, মোবাইলে উপর-নিচে হবে) -->
+        <div class="flex-grow flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden bg-black">
+            <!-- ভিডিও স্ক্রিন সেকশন (মোবাইলে স্ক্রিনের উপরে লক থাকবে) -->
+            <div class="w-full lg:flex-grow bg-black flex items-center justify-center relative p-1 sm:p-2 lg:p-4 lg:h-full">
+                <video id="customVideoPlayer" class="w-full h-auto max-h-[45vh] lg:max-h-[85vh] object-contain shadow-2xl" controls controlsList="nodownload" playsinline>
                     Your browser does not support the video tag.
                 </video>
             </div>
             
-            <!-- ডানে বা নিচে: প্রফেশনাল পার্টস সিলেক্টর প্যানেল -->
-            <div class="w-full lg:w-[350px] bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 p-6 overflow-y-auto flex flex-col gap-4">
-                <div>
-                    <h3 class="text-lg font-extrabold text-slate-100 flex items-center gap-2">
-                        <i class="fa-solid fa-list-ol text-indigo-400"></i> Video Episodes / Parts
+            <!-- পার্টস সিলেক্টর প্যানেল (মোবাইলে ভিডিওর নিচে সুন্দর গ্রিড হবে) -->
+            <div class="w-full lg:w-[360px] bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 p-4 sm:p-6 overflow-y-auto">
+                <div class="mb-4">
+                    <h3 class="text-base font-extrabold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-list-ol text-indigo-400 text-sm"></i> Select Video Part
                     </h3>
-                    <p class="text-xs text-slate-500 mt-1">যেকোনো পার্টে ক্লিক করে তাৎক্ষণিক প্লে করুন</p>
                 </div>
-                <!-- পার্ট বাটনগুলোর কন্টেইনার -->
-                <div id="video-parts-list" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-3">
+                <!-- মোবাইলে ২ কলামে বাটন দেখাবে এবং পিসিতে ১ কলামে সোজা থাকবে -->
+                <div id="video-parts-list" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2.5">
                     <!-- ডাইনামিক বাটন এখানে ইনসার্ট হবে -->
                 </div>
             </div>
@@ -173,86 +167,85 @@
     </div>
 
     <!-- Navbar -->
-    <header id="navbar-header" class="container mx-auto px-6 py-4 flex justify-between items-center border-b border-slate-800">
-        <div class="flex items-center gap-2 font-bold text-2xl tracking-wide text-indigo-400">
+    <header id="navbar-header" class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center border-b border-slate-800">
+        <div class="flex items-center gap-2 font-bold text-xl sm:text-2xl tracking-wide text-indigo-400">
             <i class="fa-solid fa-bolt animate-pulse"></i> ZipStream
         </div>
-        <div class="text-xs font-semibold px-3 py-1.5 bg-slate-800 border border-slate-700 text-slate-400 rounded-full">Dashboard v2.5</div>
+        <div class="text-[10px] sm:text-xs font-semibold px-2.5 py-1 bg-slate-800 border border-slate-700 text-slate-400 rounded-full">Mobile Ready</div>
     </header>
 
-    <!-- Main Dashboard (Shortener & Dynamic Form) -->
+    <!-- Main Dashboard -->
     <main id="main-content" class="container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
-        <div class="max-w-2xl w-full text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-extrabold mb-3 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <div class="max-w-xl w-full text-center mb-6 sm:mb-8">
+            <h1 class="text-3xl sm:text-4xl font-extrabold mb-3 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Multi-Part Video Shortener
             </h1>
-            <p class="text-slate-400 text-base">
-                আপনার মাল্টিপল ভিডিও লিংকের পার্টগুলো একসাথে যুক্ত করে প্রফেশনাল সুরক্ষিত শর্ট লিংক তৈরি করুন।
+            <p class="text-slate-400 text-sm sm:text-base px-2">
+                ভিডিও পার্টগুলো একসাথে যুক্ত করে সুরক্ষিত শর্ট লিংক তৈরি করুন।
             </p>
         </div>
 
         <!-- Shortener Box -->
-        <div class="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-6 md:p-8 rounded-3xl shadow-2xl max-w-2xl w-full">
+        <div class="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl max-w-xl w-full">
             
             <!-- ডাইনামিক ভিডিও পার্টস ইনপুট কন্টেইনার -->
-            <div id="dynamic-inputs-wrapper" class="space-y-4 mb-5">
-                <div class="flex flex-col gap-2 relative">
-                    <label class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Video Part 1 (Default):</label>
+            <div id="dynamic-inputs-wrapper" class="space-y-3.5 mb-5">
+                <div class="flex flex-col gap-1.5 relative">
+                    <label class="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Video Part 1:</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fa-solid fa-video"></i></span>
-                        <input type="url" class="video-url-input w-full pl-11 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-indigo-500 text-slate-200 placeholder-slate-600 transition" placeholder="https://example.com/part1.mp4">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 text-sm"><i class="fa-solid fa-video"></i></span>
+                        <input type="url" class="video-url-input w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-indigo-500 text-sm text-slate-200 placeholder-slate-600 transition" placeholder="https://example.com/part1.mp4">
                     </div>
                 </div>
             </div>
 
-            <!-- ফর্ম কন্ট্রোল বাটনসমূহ -->
-            <div class="flex flex-col sm:flex-row gap-3 mb-6">
-                <button onclick="addNewPartField()" class="w-full bg-slate-900 hover:bg-slate-750 text-indigo-400 border border-indigo-500/30 font-semibold px-6 py-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-plus"></i> Add Video Part
+            <!-- ফর্ম কন্ট্রোল বাটনসমূহ (মোবাইলে উপর-নিচে সুন্দর ফিট হবে) -->
+            <div class="flex flex-col sm:flex-row gap-2.5 mb-5">
+                <button onclick="addNewPartField()" class="w-full bg-slate-900 active:bg-slate-800 text-indigo-400 border border-indigo-500/20 font-semibold px-4 py-3.5 rounded-xl text-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-plus text-xs"></i> Add Video Part
                 </button>
-                <button onclick="buildSecureStream()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold px-8 py-4 rounded-xl shadow-xl shadow-indigo-600/20 active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer">
-                    Generate Short Link <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <button onclick="buildSecureStream()" class="w-full bg-indigo-600 active:bg-indigo-700 text-white font-bold px-6 py-3.5 rounded-xl text-sm shadow-xl shadow-indigo-600/10 transition flex items-center justify-center gap-2 cursor-pointer">
+                    Generate Short Link <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
                 </button>
             </div>
 
             <!-- Result Box -->
-            <div id="resultBox" class="p-4 bg-slate-900/80 border border-indigo-500/30 rounded-2xl hidden flex-col sm:flex-row justify-between items-center gap-4 animate-fadeIn">
-                <div class="text-left w-full sm:w-auto">
-                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-1"><i class="fa-solid fa-circle-check"></i> Short Link Ready:</span>
-                    <a id="shortUrl" href="#" target="_blank" class="text-indigo-400 font-semibold text-base break-all hover:underline"></a>
+            <div id="resultBox" class="p-4 bg-slate-900/80 border border-indigo-500/30 rounded-xl hidden flex-col justify-between items-center gap-3">
+                <div class="text-left w-full">
+                    <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-0.5"><i class="fa-solid fa-circle-check"></i> Short Link Ready:</span>
+                    <a id="shortUrl" href="#" target="_blank" class="text-indigo-400 font-semibold text-sm break-all hover:underline"></a>
                 </div>
-                <button onclick="copyLink()" id="copyBtn" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fa-regular fa-copy"></i> Copy
+                <button onclick="copyLink()" id="copyBtn" class="w-full bg-slate-800 active:bg-slate-750 border border-slate-700 text-slate-200 px-4 py-2.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-regular fa-copy"></i> Copy Link
                 </button>
             </div>
         </div>
     </main>
 
     <!-- Footer -->
-    <footer id="footer-section" class="border-t border-slate-800 py-5 text-center text-xs text-slate-500">
-        &copy; 2026 ZipStream Secure CDN. All Rights Reserved. Powered by GitHub Pages.
+    <footer id="footer-section" class="border-t border-slate-800 py-4 text-center text-[10px] text-slate-500">
+        &copy; 2026 ZipStream. Powered by GitHub Pages.
     </footer>
 
     <!-- UI Core Logic -->
     <script>
         let fieldCount = 1;
 
-        // নতুন পার্ট ফিল্ড ডাইনামিকালি অ্যাড করার ফাংশন
         function addNewPartField() {
             fieldCount++;
             const container = document.getElementById('dynamic-inputs-wrapper');
             
             const newFieldDiv = document.createElement('div');
-            newFieldDiv.className = "flex flex-col gap-2 relative animate-fadeIn mt-3";
+            newFieldDiv.className = "flex flex-col gap-1.5 relative mt-3";
             newFieldDiv.id = `field-group-${fieldCount}`;
             newFieldDiv.innerHTML = `
                 <div class="flex justify-between items-center">
-                    <label class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Video Part ${fieldCount}:</label>
-                    <button onclick="removeField(${fieldCount})" class="text-xs text-rose-400 hover:underline flex items-center gap-1 cursor-pointer"><i class="fa-solid fa-trash-can"></i> Remove</button>
+                    <label class="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Video Part ${fieldCount}:</label>
+                    <button onclick="removeField(${fieldCount})" class="text-[10px] text-rose-400 hover:underline flex items-center gap-0.5 cursor-pointer"><i class="fa-solid fa-trash-can"></i> Remove</button>
                 </div>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fa-solid fa-video"></i></span>
-                    <input type="url" class="video-url-input w-full pl-11 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-indigo-500 text-slate-200 placeholder-slate-600 transition" placeholder="https://example.com/part${fieldCount}.mp4">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 text-sm"><i class="fa-solid fa-video"></i></span>
+                    <input type="url" class="video-url-input w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-indigo-500 text-sm text-slate-200 placeholder-slate-600 transition" placeholder="https://example.com/part${fieldCount}.mp4">
                 </div>
             `;
             container.appendChild(newFieldDiv);
@@ -263,7 +256,6 @@
             if (field) field.remove();
         }
 
-        // মাল্টি-পার্ট অবজেক্ট লিংক বিল্ডার
         function buildSecureStream() {
             const inputs = document.querySelectorAll('.video-url-input');
             const urlArray = [];
@@ -280,7 +272,6 @@
                 return;
             }
 
-            // সম্পূর্ণ ডাটা স্ট্রাকচার এনকোড করা
             const encodedStream = URLDataEngine.encode(urlArray);
             const finalShortLink = window.location.origin + window.location.pathname + "?stream=" + encodedStream;
 
@@ -288,7 +279,7 @@
             shortUrlA.textContent = finalShortLink;
             shortUrlA.href = finalShortLink;
 
-            document.getElementById('copyBtn').innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+            document.getElementById('copyBtn').innerHTML = '<i class="fa-regular fa-copy"></i> Copy Link';
             document.getElementById('resultBox').style.display = 'flex';
         }
 
@@ -299,7 +290,7 @@
             navigator.clipboard.writeText(shortUrlText).then(function() {
                 copyBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copied!';
             }, function() {
-                alert("কপি করা যায়নি, ম্যানুয়ালি কপি করুন।");
+                alert("ম্যানুয়ালি কপি করুন।");
             });
         }
     </script>
