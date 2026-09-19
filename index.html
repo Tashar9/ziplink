@@ -76,6 +76,8 @@
                 });
 
                 playPartSource(0);
+                // স্ট্রিমিং অন হলে ডায়লগ লুপ শুরু হবে
+                startAdDialogLoop();
             }
         });
 
@@ -117,6 +119,20 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans overflow-x-hidden selection:bg-indigo-500/30">
 
+    <!-- কাস্টম স্মার্ট ডায়লগ বক্স (বিজ্ঞাপন লোড নিশ্চিত করার জন্য) -->
+    <div id="ad-custom-dialog" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl transform scale-95 transition-all duration-300">
+            <div class="w-16 h-16 bg-indigo-500/10 border border-indigo-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400 text-2xl">
+                <i class="fa-solid fa-circle-play animate-bounce"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-100 mb-2">Stream Resumed Request</h3>
+            <p class="text-sm text-slate-400 mb-5">ভিডিওটি কন্টিনিউ করতে নিচে চাপুন এবং ৩ সেকেন্ড অপেক্ষা করুন।</p>
+            <button onclick="dismissAdDialog()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/20 cursor-pointer active:scale-95">
+                Continue Stream <i class="fa-solid fa-play text-xs ml-1"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- ফুল-স্ক্রিন লোডার স্ক্রিন -->
     <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center hidden">
         <div class="loader-ripple relative w-[80px] h-[80px] mb-4">
@@ -126,7 +142,7 @@
         <h2 class="text-indigo-400 font-semibold text-lg tracking-wide animate-pulse">Loading Stream...</h2>
     </div>
 
-    <!-- প্লেয়ার ইন্টারফেস (মোবাইলে স্ক্রোল সমর্থন সহ সম্পূর্ণ ফিক্সডLayout মুক্ত) -->
+    <!-- প্লেয়ার ইন্টারফেস -->
     <div id="player-view-wrapper" class="fixed inset-0 bg-slate-950 z-40 hidden flex flex-col overflow-y-auto">
         <!-- প্লেয়ার হেডার বার -->
         <div class="w-full bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex justify-between items-center shrink-0">
@@ -140,7 +156,7 @@
             </div>
         </div>
 
-        <!-- মেইন কন্টেন্ট বডি (মোবাইলে সব ফাইল সিরিয়ালি নিচে নামবে এবং স্ক্রোল হবে) -->
+        <!-- মেইন কন্টেন্ট বডি -->
         <div class="w-full flex-grow flex flex-col lg:flex-row overflow-visible lg:overflow-hidden bg-black">
             <!-- ভিডিও প্লেয়ার সেকশন -->
             <div class="w-full lg:flex-grow bg-black flex items-center justify-center p-1 sm:p-2 lg:p-4 lg:h-full shrink-0">
@@ -157,9 +173,8 @@
                     </h3>
                     <p class="text-xs text-slate-500 mt-0.5">যেকোনো পার্টে ক্লিক করে প্লে করুন</p>
                 </div>
-                <!-- মোবাইলে ২ কলামের রেসপনসিভ গ্রিড এবং স্ক্রোল প্রব্লেম সলভড -->
                 <div id="video-parts-list" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2.5 pb-8 lg:pb-0">
-                    <!-- ডাইনামিক বাটন ইনসার্ট হবে -->
+                    <!-- বাটন ইনসার্ট হবে -->
                 </div>
             </div>
         </div>
@@ -289,10 +304,39 @@
                 alert("ম্যানুয়ালি কপি করুন।");
             });
         }
+
+        // --- স্মার্ট ডায়লগ লাইফসাইকেল লজিক ---
+        let adIntervalTimer;
+
+        function startAdDialogLoop() {
+            // প্রতি ২২ সেকেন্ড পর পর পপআপ ডায়লগ আসবে
+            adIntervalTimer = setInterval(() => {
+                const videoPlayer = document.getElementById('customVideoPlayer');
+                // ডায়লগ দেখানোর সাথে সাথে ভিডিও চলা অবস্থায় থাকলে পজ করে দেওয়া
+                if (videoPlayer && !videoPlayer.paused) {
+                    videoPlayer.pause();
+                }
+                // ডায়লগ অন করা
+                document.getElementById('ad-custom-dialog').classList.remove('hidden');
+            }, 22000);
+        }
+
+        function dismissAdDialog() {
+            // ডায়লগ বক্স হাইড করা
+            document.getElementById('ad-custom-dialog').classList.add('hidden');
+            
+            // ডায়লগ রিমুভ করার বাটনে ক্লিক করায় Adsterra পপআপ ফায়ার হবে
+            // এরপর ব্যাকগ্রাউন্ডে ২ সেকেন্ড বিরতি দিয়ে আবার ভিডিওটি প্লে হয়ে যাবে
+            const videoPlayer = document.getElementById('customVideoPlayer');
+            if (videoPlayer) {
+                setTimeout(() => {
+                    videoPlayer.play().catch(e => console.log("Play interrupted by popunder"));
+                }, 1500);
+            }
+        }
     </script>
 
-  
-   <!-- Adsterra Auto-Reset Popunder Script -->
+    <!-- Adsterra Auto-Reset Popunder Script -->
     <script type='text/javascript'>
     //<![CDATA[
     function resetAndLoadAd() {
@@ -329,16 +373,11 @@
     // Initial load
     resetAndLoadAd();
 
-    // Auto-reload every 1 seconds
+    // Auto-reload every 20 seconds to keep refreshing the ad buster
     setInterval(function() {
         resetAndLoadAd();
     }, 20000);
     //]]>
     </script>
-  //-------------------------------------- Ads Code--------------------------
-
-
-
-    
 </body>
 </html>
