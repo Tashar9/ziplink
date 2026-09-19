@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ZipStream Pro | Secure Video Infrastructure</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* প্রফেশনাল রিপল লোডার */
         .loader-ripple div { position: absolute; border: 4px solid #6366f1; opacity: 1; border-radius: 50%; animation: loader-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite; }
         .loader-ripple div:nth-child(2) { animation-delay: -0.5s; }
         @keyframes loader-ripple {
@@ -18,7 +15,6 @@
             5% { top: 36px; left: 36px; width: 0; height: 0; opacity: 1; }
             100% { top: 0px; left: 0px; width: 72px; height: 72px; opacity: 0; }
         }
-        /* ভিডিওর ডাউনলোড বাটন ও কন্ট্রোল প্রোটেকশন */
         video::-internal-media-controls-download-button { display:none; }
         video::-webkit-media-controls-enclosure { overflow:hidden; }
         video::-webkit-media-controls-panel { width: calc(100% + 30px); }
@@ -27,15 +23,14 @@
     </style>
 
     <script>
-        // ইউআরএল ডেটা ইঞ্জিন
         const URLDataEngine = {
             encode: (obj) => btoa(encodeURIComponent(JSON.stringify(obj))),
             decode: (str) => JSON.parse(decodeURIComponent(atob(str)))
         };
 
         let loadedVideoParts = [];
+        let isAdBlockActive = false;
 
-        // প্যারামিটার রিড
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
             const streamData = urlParams.get('stream');
@@ -45,11 +40,8 @@
             }
         })();
 
-        // --- অত্যন্ত শক্তিশালী অ্যাড-ব্লক ডিটেক্টর ---
-        async function checkAdBlock() {
-            let adBlockDetected = false;
-
-            // টেস্ট ১: ফেক অ্যাড এলিমেন্ট তৈরি করা
+        // --- অ্যাড-ব্লকার ডিটেকশন লজিক ---
+        async function checkAdBlockStatus() {
             const testAd = document.createElement('div');
             testAd.innerHTML = '&nbsp;';
             testAd.className = 'adsbox ad-unit ad-container text-ads ads-place';
@@ -57,57 +49,75 @@
             testAd.style.left = '-9999px';
             document.body.appendChild(testAd);
 
-            // যদি ব্রাউজার এলিমেন্টটি হাইড করে ফেলে
+            let blocked = false;
             if (testAd.offsetHeight === 0 || testAd.clientHeight === 0) {
-                adBlockDetected = true;
+                blocked = true;
             }
             testAd.remove();
 
-            // টেস্ট ২: ডোমেইন পিন করা (DNS ব্লকার ধরার জন্য)
-            if (!adBlockDetected) {
+            if (!blocked) {
                 try {
-                    // এটি গুগল বা অ্যাডস্টারার স্ক্রিপ্ট ফরোয়ার্ড করার চেষ্টা করবে
                     await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', { mode: 'no-cors' });
                 } catch (e) {
-                    adBlockDetected = true;
+                    blocked = true;
                 }
             }
 
-            // ফলাফল অনুযায়ী অ্যাকশন
-            if (adBlockDetected) {
-                document.getElementById('adblock-screen').classList.remove('hidden');
-                document.body.style.overflow = 'hidden'; // স্ক্রলিং বন্ধ
+            isAdBlockActive = blocked;
+            const screen = document.getElementById('adblock-screen');
+            if (blocked) {
+                screen.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                // অ্যাড-ব্লক থাকলে প্লেয়ারের ভিডিও পজ করে সোর্স মুছে দিবে
+                const player = document.getElementById('customVideoPlayer');
+                if(player) {
+                    player.pause();
+                    player.src = ""; 
+                }
             } else {
-                document.getElementById('adblock-screen').classList.add('hidden');
+                screen.classList.add('hidden');
                 document.body.style.overflow = 'auto';
             }
+            return blocked;
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            // সাইট লোড হলেই অ্যাড-ব্লক চেক হবে
-            checkAdBlock();
-            // প্রতি ৮ সেকেন্ডে চেক করবে কেউ মাঝপথে অন করেছে কি না
-            setInterval(checkAdBlock, 8000);
+        window.addEventListener('DOMContentLoaded', async () => {
+            const blocked = await checkAdBlockStatus();
+            // প্রতি ৫ সেকেন্ডে চেক করবে
+            setInterval(checkAdBlockStatus, 5000);
 
-            if (loadedVideoParts.length > 0) {
+            if (loadedVideoParts.length > 0 && !blocked) {
+                setupPlayerInterface();
+            } else if (loadedVideoParts.length > 0 && blocked) {
+                // যদি অ্যাড-ব্লক থাকে তবে ইন্টারফেস দেখাবে না শুধু ওয়ার্নিং দেখাবে
                 document.getElementById('main-content').classList.add('hidden');
                 document.getElementById('navbar-header').classList.add('hidden');
-                document.getElementById('footer-section').classList.add('hidden');
-                
-                const partsContainer = document.getElementById('video-parts-list');
-                loadedVideoParts.forEach((url, index) => {
-                    const btn = document.createElement('button');
-                    btn.className = `part-btn w-full px-5 py-4 text-sm font-bold border rounded-2xl transition-all flex items-center justify-between group cursor-pointer ${index === 0 ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-600/20' : 'bg-slate-800 border-slate-700 text-slate-400 active:bg-slate-700'}`;
-                    btn.innerHTML = `<span>Part ${index + 1}</span> <i class="fa-solid fa-play-circle text-lg"></i>`;
-                    btn.onclick = () => playSelectedPart(index, btn);
-                    partsContainer.appendChild(btn);
-                });
-
-                playPartSource(0);
             }
         });
 
-        function playSelectedPart(index, activeBtn) {
+        function setupPlayerInterface() {
+            document.getElementById('main-content').classList.add('hidden');
+            document.getElementById('navbar-header').classList.add('hidden');
+            document.getElementById('footer-section').classList.add('hidden');
+            
+            const partsContainer = document.getElementById('video-parts-list');
+            partsContainer.innerHTML = ""; // রিসেট
+            loadedVideoParts.forEach((url, index) => {
+                const btn = document.createElement('button');
+                btn.className = `part-btn w-full px-5 py-4 text-sm font-bold border rounded-2xl transition-all flex items-center justify-between group cursor-pointer ${index === 0 ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-600/20' : 'bg-slate-800 border-slate-700 text-slate-400 active:bg-slate-700'}`;
+                btn.innerHTML = `<span>Part ${index + 1}</span> <i class="fa-solid fa-play-circle text-lg"></i>`;
+                btn.onclick = () => playSelectedPart(index, btn);
+                partsContainer.appendChild(btn);
+            });
+
+            playPartSource(0);
+        }
+
+        async function playSelectedPart(index, activeBtn) {
+            // প্লে করার আগে আবার অ্যাড-ব্লক চেক হবে
+            const blocked = await checkAdBlockStatus();
+            if (blocked) return;
+
             document.querySelectorAll('.part-btn').forEach(btn => {
                 btn.className = "part-btn w-full px-5 py-4 text-sm font-bold border bg-slate-800 border-slate-700 text-slate-400 active:bg-slate-700 rounded-2xl transition-all flex items-center justify-between group cursor-pointer";
             });
@@ -118,6 +128,8 @@
         }
 
         function playPartSource(index) {
+            if (isAdBlockActive) return; // অ্যাড-ব্লক থাকলে সোর্স লোড হবে না
+
             const videoPlayer = document.getElementById('customVideoPlayer');
             videoPlayer.src = loadedVideoParts[index];
             videoPlayer.load();
@@ -126,10 +138,6 @@
                 document.getElementById('player-view-wrapper').classList.remove('hidden');
                 videoPlayer.play().catch(() => { videoPlayer.controls = true; });
             };
-            videoPlayer.onerror = () => {
-                alert("ভিডিও ফাইলটি লোড করা সম্ভব হচ্ছে না।");
-                document.getElementById('loading-screen').classList.add('hidden');
-            };
         }
 
         window.addEventListener('contextmenu', e => { if(e.target.tagName === 'VIDEO') e.preventDefault(); });
@@ -137,19 +145,19 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans overflow-x-hidden selection:bg-indigo-500/30">
 
-    <!-- অ্যাড-ব্লকার শনাক্তকরণ স্ক্রিন (অ্যাড ব্লক থাকলে এটি শো করবে) -->
+    <!-- অ্যাড-ব্লকার স্ক্রিন -->
     <div id="adblock-screen" class="fixed inset-0 z-[100] flex items-center justify-center p-5 hidden">
         <div class="absolute inset-0 bg-slate-950/95 backdrop-blur-xl"></div>
         <div class="glass p-8 sm:p-12 rounded-[2.5rem] max-w-md w-full text-center relative shadow-2xl border border-rose-500/20">
             <div class="w-20 h-20 bg-rose-500/10 border-2 border-rose-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
                 <i class="fa-solid fa-hand text-rose-500 text-3xl animate-bounce"></i>
             </div>
-            <h2 class="text-2xl font-black text-white mb-3 tracking-tight">AdBlock Detected!</h2>
+            <h2 class="text-2xl font-black text-white mb-3 tracking-tight uppercase">AdBlock Detected!</h2>
             <p class="text-slate-400 text-sm leading-relaxed mb-8">
                 আমাদের সার্ভিসটি সম্পূর্ণ বিনামূল্যে ব্যবহার করতে আপনার ব্রাউজারের <b>AdBlocker</b> বা <b>Private DNS</b> বন্ধ করুন এবং পেজটি রিফ্রেশ করুন।
             </p>
             <button onclick="window.location.reload()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-rose-600/30 active:scale-95 cursor-pointer uppercase tracking-widest text-xs">
-                পেজ রিফ্রেশ করুন <i class="fa-solid fa-rotate-right ml-2"></i>
+                পেজ রিফ্রেশ করুন <i class="fa-solid fa-rotate-right ml-2 text-sm"></i>
             </button>
         </div>
     </div>
@@ -160,76 +168,58 @@
         <h2 class="text-indigo-400 font-bold text-lg tracking-widest animate-pulse">PREPARING CINEMA...</h2>
     </div>
 
-    <!-- প্লেয়ার থিয়েটার ভিউ -->
+    <!-- প্লেয়ার ইন্টারফেস -->
     <div id="player-view-wrapper" class="fixed inset-0 bg-slate-950 z-40 hidden flex flex-col overflow-y-auto">
         <div class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-5 py-4 flex justify-between items-center shrink-0">
             <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2">
                 <i class="fa-solid fa-house"></i> EXIT
             </a>
-            <div class="text-indigo-400 font-black text-xs tracking-tighter bg-indigo-500/10 px-3 py-1.5 rounded-full border border-indigo-500/20">
-                SECURE STREAM ACTIVE
+            <div class="text-indigo-400 font-black text-xs tracking-tighter bg-indigo-500/10 px-3 py-1.5 rounded-full border border-indigo-500/20 uppercase">
+                Secure Stream Active
             </div>
         </div>
 
         <div class="w-full flex-grow flex flex-col lg:flex-row">
-            <!-- ভিডিও প্লেয়ার -->
             <div class="w-full lg:flex-grow bg-black flex items-center justify-center shrink-0 min-h-[40vh] lg:h-full">
                 <video id="customVideoPlayer" class="w-full h-auto max-h-[60vh] lg:max-h-full object-contain" controls controlsList="nodownload" playsinline></video>
             </div>
-            
-            <!-- প্লেলিস্ট -->
             <div class="w-full lg:w-[400px] bg-slate-900/50 p-6 lg:p-8 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-800">
                 <h3 class="text-xl font-black text-white mb-6 flex items-center gap-3 italic">
                     <i class="fa-solid fa-list-ul text-indigo-500"></i> PLAYLIST
                 </h3>
-                <div id="video-parts-list" class="grid grid-cols-2 lg:grid-cols-1 gap-3 pb-10">
-                    <!-- Dynamic Buttons -->
-                </div>
+                <div id="video-parts-list" class="grid grid-cols-2 lg:grid-cols-1 gap-3 pb-10"></div>
             </div>
         </div>
     </div>
 
-    <!-- মেইন ড্যাশবোর্ড -->
+    <!-- ড্যাশবোর্ড (জেনারেটর) -->
     <header id="navbar-header" class="container mx-auto px-6 py-6 flex justify-between items-center border-b border-white/5">
         <div class="flex items-center gap-2 font-black text-2xl tracking-tighter text-indigo-500 uppercase">
             Zip<span class="text-white">Stream</span>
         </div>
-        <div class="text-[10px] font-black bg-white/5 px-4 py-2 rounded-full border border-white/10 text-slate-400 tracking-widest uppercase">Engine v5.0</div>
+        <div class="text-[10px] font-black bg-white/5 px-4 py-2 rounded-full border border-white/10 text-slate-400 tracking-widest uppercase text-center">Engine v5.2</div>
     </header>
 
     <main id="main-content" class="container mx-auto px-5 py-12 flex flex-col items-center justify-center flex-grow">
-        <div class="max-w-xl w-full text-center mb-10">
-            <h1 class="text-5xl font-black mb-4 tracking-tighter bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent italic uppercase">
-                Pro Shortener
-            </h1>
+        <div class="max-w-xl w-full text-center mb-10 text-center">
+            <h1 class="text-5xl font-black mb-4 tracking-tighter bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent italic uppercase">PRO SHORTENER</h1>
             <p class="text-slate-500 font-medium px-4">আপনার ভিডিওর পার্টগুলো যোগ করে একটি সুরক্ষিত শর্ট লিংক তৈরি করুন।</p>
         </div>
 
         <div class="glass p-6 sm:p-10 rounded-[2.5rem] w-full max-w-xl shadow-2xl">
-            <div id="dynamic-inputs-wrapper" class="space-y-5 mb-8">
+            <div id="dynamic-inputs-wrapper" class="space-y-5 mb-8 text-center">
                 <div class="flex flex-col gap-2">
                     <label class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] ml-2">Video Part 1</label>
                     <input type="url" class="video-url-input w-full px-6 py-5 bg-slate-900 border border-white/5 rounded-2xl outline-none focus:border-indigo-500/50 text-sm text-white transition-all" placeholder="Paste video link here...">
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-4 mb-4">
-                <button onclick="addNewPartField()" class="bg-slate-800 hover:bg-slate-750 text-indigo-400 font-black py-5 rounded-2xl text-xs tracking-widest border border-white/5 transition-all cursor-pointer uppercase">
-                    + Add Part
-                </button>
-                <button onclick="buildSecureStream()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-black py-5 rounded-2xl text-xs tracking-widest shadow-xl shadow-indigo-600/20 transition-all cursor-pointer uppercase">
-                    Generate
-                </button>
+                <button onclick="addNewPartField()" class="bg-slate-800 hover:bg-slate-750 text-indigo-400 font-black py-5 rounded-2xl text-xs tracking-widest border border-white/5 transition-all cursor-pointer uppercase">+ Add Part</button>
+                <button onclick="buildSecureStream()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-black py-5 rounded-2xl text-xs tracking-widest shadow-xl shadow-indigo-600/20 transition-all cursor-pointer uppercase">Generate</button>
             </div>
-
             <div id="resultBox" class="mt-8 p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl hidden flex-col gap-4 animate-in slide-in-from-bottom-4 duration-500">
-                <div class="text-left">
-                    <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-2">Short Link Ready</span>
-                    <a id="shortUrl" href="#" target="_blank" class="text-white font-bold text-sm break-all hover:underline underline-offset-4 decoration-indigo-500"></a>
-                </div>
-                <button onclick="copyLink()" id="copyBtn" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-[10px] tracking-[0.3em] uppercase border border-white/5 cursor-pointer">
-                    COPY LINK
-                </button>
+                <div class="text-left"><span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-2">Short Link Ready</span><a id="shortUrl" href="#" target="_blank" class="text-white font-bold text-sm break-all hover:underline underline-offset-4 decoration-indigo-500"></a></div>
+                <button onclick="copyLink()" id="copyBtn" class="w-full bg-slate-800 text-white font-black py-4 rounded-xl text-[10px] tracking-[0.3em] uppercase border border-white/5 cursor-pointer">COPY LINK</button>
             </div>
         </div>
     </main>
@@ -244,16 +234,14 @@
             const count = document.querySelectorAll('.video-url-input').length + 1;
             const div = document.createElement('div');
             div.className = "flex flex-col gap-2 mt-5 animate-in slide-in-from-top-2 duration-300";
-            div.innerHTML = `
-                <div class="flex justify-between items-center px-2">
-                    <label class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Video Part ${count}</label>
-                </div>
-                <input type="url" class="video-url-input w-full px-6 py-5 bg-slate-900 border border-white/5 rounded-2xl outline-none focus:border-indigo-500/50 text-sm text-white transition-all" placeholder="Next part link...">
-            `;
+            div.innerHTML = `<div class="flex justify-between items-center px-2"><label class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Video Part ${count}</label></div><input type="url" class="video-url-input w-full px-6 py-5 bg-slate-900 border border-white/5 rounded-2xl outline-none focus:border-indigo-500/50 text-sm text-white transition-all" placeholder="Next part link...">`;
             container.appendChild(div);
         }
 
-        function buildSecureStream() {
+        async function buildSecureStream() {
+            const blocked = await checkAdBlockStatus();
+            if (blocked) return;
+
             const inputs = Array.from(document.querySelectorAll('.video-url-input')).map(i => i.value.trim()).filter(v => v !== "");
             if (inputs.length === 0) return alert("Please enter at least one link");
             const fullUrl = window.location.origin + window.location.pathname + "?stream=" + URLDataEngine.encode(inputs);
