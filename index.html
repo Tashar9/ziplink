@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZipLink | Professional Video & URL Shortener</title>
+    <title>ZipStream | Professional Multi-Part Video Platform</title>
     <!-- Tailwind CSS for Premium UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* কাস্টম অ্যানিমেশন এবং ভিডিও প্লেয়ার ওভারলে */
+        /* প্রফেশনাল রিপল লোডার */
         .loader-ripple div {
             position: absolute;
             border: 4px solid #6366f1;
@@ -18,177 +18,210 @@
             border-radius: 50%;
             animation: loader-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
         }
-        .loader-ripple div:nth-child(2) {
-            animation-delay: -0.5s;
-        }
+        .loader-ripple div:nth-child(2) { animation-delay: -0.5s; }
         @keyframes loader-ripple {
             0% { top: 36px; left: 36px; width: 0; height: 0; opacity: 0; }
-            4.9% { top: 36px; left: 36px; width: 0; height: 0; opacity: 0; }
             5% { top: 36px; left: 36px; width: 0; height: 0; opacity: 1; }
             100% { top: 0px; left: 0px; width: 72px; height: 72px; opacity: 0; }
         }
+        /* ভিডিওর ওপর থেকে ডিফল্ট কন্ট্রোল ও ডাউনলোড লুকানো */
+        video::-internal-media-controls-download-button { display:none; }
+        video::-webkit-media-controls-enclosure { overflow:hidden; }
+        video::-webkit-media-controls-panel { width: calc(100% + 30px); }
     </style>
 
     <script>
-        // আল্ট্রা-শর্ট Base62 কম্প্রেশন ইঞ্জিন
-        const Base62 = {
-            charset: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
-            encode: function(str) {
-                let output = '';
-                for (let i = 0; i < str.length; i++) {
-                    let c = str.charCodeAt(i);
-                    output += this.charset[c % 62] + this.charset[Math.floor(c / 62) % 62];
-                }
-                return output;
+        // নিরাপদ এবং ছোট JSON কম্প্রেশন ইঞ্জিন (URL-Safe Base64)
+        const URLDataEngine = {
+            encode: function(obj) {
+                return btoa(encodeURIComponent(JSON.stringify(obj)));
             },
             decode: function(str) {
-                let output = '';
-                for (let i = 0; i < str.length; i += 2) {
-                    let p1 = this.charset.indexOf(str[i]);
-                    let p2 = this.charset.indexOf(str[i+1]);
-                    output += String.fromCharCode(p1 + (p2 * 62));
-                }
-                return output;
+                return JSON.parse(decodeURIComponent(atob(str)));
             }
         };
 
-        // গ্লোবাল ভেরিয়েবল রিডাইরেক্ট ইউআরএল হোল্ড করার জন্য
-        let targetUrl = "";
+        let loadedVideoParts = [];
 
-        // ইউআরএল চেকিং ইঞ্জিন
+        // পেজ রেন্ডার হওয়ার আগেই প্যারামিটার এনালাইসিস
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const shortKey = urlParams.get('q');
-            if (shortKey) {
+            const streamData = urlParams.get('stream');
+            if (streamData) {
                 try {
-                    let originalUrl = Base62.decode(shortKey);
-                    if (originalUrl.startsWith('s://')) originalUrl = originalUrl.replace('s://', 'https://');
-                    else if (originalUrl.startsWith('h://')) originalUrl = originalUrl.replace('h://', 'http://');
-                    
-                    if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
-                        targetUrl = originalUrl;
-                    }
+                    loadedVideoParts = URLDataEngine.decode(streamData);
                 } catch (e) {
-                    console.error("Decode error:", e);
+                    console.error("Data decode error:", e);
                 }
             }
         })();
 
-        // পেজ সম্পূর্ণ প্রস্তুত হলে অ্যাকশন নেওয়া
+        // পেজ প্রস্তুত হলে ডাইনামিক প্লেয়ার লোড করা
         window.addEventListener('DOMContentLoaded', () => {
-            if (targetUrl) {
-                // মেইন ভিউ হাইড করে লোডিং ইন্টারফেস দেখানো
+            if (loadedVideoParts && loadedVideoParts.length > 0) {
+                // শর্টনার ইন্টারফেস লুকিয়ে স্ট্রিমিং মোড অন করা
                 document.getElementById('main-content').classList.add('hidden');
                 document.getElementById('navbar-header').classList.add('hidden');
                 document.getElementById('footer-section').classList.add('hidden');
                 document.getElementById('loading-screen').classList.remove('hidden');
 
-                // চেক করা হচ্ছে এটি ডিরেক্ট ভিডিও ফাইল কি না (mp4, webm, ogg ইত্যাদি)
-                const isVideo = /\.(mp4|webm|ogg|mov|3gp)($|\?)/i.test(targetUrl);
+                // পার্ট বাটন লিস্ট তৈরি
+                const partsContainer = document.getElementById('video-parts-list');
+                loadedVideoParts.forEach((url, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `part-btn px-5 py-3 rounded-xl font-bold border transition flex items-center gap-2 cursor-pointer ${index === 0 ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`;
+                    btn.innerHTML = `<i class="fa-solid fa-circle-play text-sm"></i> Part ${index + 1}`;
+                    btn.onclick = () => playSelectedPart(index, btn);
+                    partsContainer.appendChild(btn);
+                });
 
-                if (isVideo) {
-                    // ভিডিও প্লেয়ার সেটআপ
-                    const videoPlayer = document.getElementById('myVideo');
-                    const videoSource = document.getElementById('videoSource');
-                    videoSource.src = targetUrl;
-                    
-                    videoPlayer.load();
-                    
-                    // ভিডিও মেটাডাটা ও বাফার লোড হলে প্লেয়ার অন করা
-                    videoPlayer.onloadeddata = function() {
-                        document.getElementById('loading-screen').classList.add('hidden');
-                        document.getElementById('video-container').classList.remove('hidden');
-                        videoPlayer.play().catch(error => {
-                            console.log("Autoplay blocked, showing controls.");
-                            videoPlayer.controls = true;
-                        });
-                    };
-
-                    // যদি লোড হতে কোনো এরর হয় তবে সরাসরি রিডাইরেক্ট করবে
-                    videoPlayer.onerror = function() {
-                        window.location.replace(targetUrl);
-                    };
-                } else {
-                    // ভিডিও ফাইল না হলে সাধারণ লিংকের মতো ১ সেকেন্ড লোডিং অ্যানিমেশন দেখিয়ে রিডাইরেক্ট করবে
-                    setTimeout(() => {
-                        window.location.replace(targetUrl);
-                    }, 1200);
-                }
+                // ১ম পার্ট অটো লোড ও প্লে
+                playPartSource(0);
             }
+        });
+
+        function playSelectedPart(index, activeBtn) {
+            // সকল বাটনের একটিভ স্টেট রিসেট
+            document.querySelectorAll('.part-btn').forEach(btn => {
+                btn.className = "part-btn px-5 py-3 rounded-xl font-bold border bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2 cursor-pointer";
+            });
+            // নির্বাচিত বাটনকে একটিভ করা
+            activeBtn.className = "part-btn px-5 py-3 rounded-xl font-bold border bg-indigo-600 border-indigo-500 text-white shadow-lg transition flex items-center gap-2 cursor-pointer";
+            
+            // লোডার অন করে পার্ট চেঞ্জ করা
+            document.getElementById('loading-screen').classList.remove('hidden');
+            document.getElementById('player-view-wrapper').classList.add('hidden');
+            playPartSource(index);
+        }
+
+        function playPartSource(index) {
+            const videoUrl = loadedVideoParts[index];
+            const videoPlayer = document.getElementById('customVideoPlayer');
+            
+            videoPlayer.src = videoUrl;
+            videoPlayer.load();
+
+            videoPlayer.onloadeddata = function() {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('player-view-wrapper').classList.remove('hidden');
+                videoPlayer.play().catch(() => {
+                    // যদি অটো-প্লে ব্লক হয়, তবে সাধারণ প্লে বাটন এনাবল থাকবে
+                    videoPlayer.controls = true;
+                });
+            };
+
+            videoPlayer.onerror = function() {
+                alert("এই পার্টের ভিডিও ফাইলটি লোড করা যাচ্ছে না।");
+                document.getElementById('loading-screen').classList.add('hidden');
+            };
+        }
+
+        // কাস্টম সিকিউরিটি প্রটেকশন (ডাউনলোড ও রাইট ক্লিক নিষ্ক্রিয় করা)
+        window.addEventListener('contextmenu', e => {
+            if(e.target.tagName === 'VIDEO') e.preventDefault();
         });
     </script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans overflow-x-hidden">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans overflow-x-hidden selection:bg-indigo-500/30">
 
-    <!-- কাস্টম ফুল-স্ক্রিন লোডিং অ্যানিমেশন স্ক্রিন -->
+    <!-- কাস্টম ফুল-স্ক্রিন লোডার -->
     <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center hidden">
-        <div class="loader-ripple relative w-20 height-20 w-[80px] h-[80px] mb-4">
+        <div class="loader-ripple relative w-[80px] h-[80px] mb-4">
             <div></div>
             <div></div>
         </div>
-        <h2 class="text-indigo-400 font-semibold text-xl tracking-wide animate-pulse">Loading Video Stream...</h2>
-        <p class="text-slate-500 text-sm mt-2">অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন</p>
+        <h2 class="text-indigo-400 font-semibold text-xl tracking-wide animate-pulse">Preparing Premium Stream...</h2>
+        <p class="text-slate-500 text-sm mt-2">ভিডিও লোড হচ্ছে, অনুগ্রহ করে একটু অপেক্ষা করুন</p>
     </div>
 
-    <!-- ফুল-স্ক্রিন ইনলাইন ভিডিও প্লেয়ার ইন্টারফেস -->
-    <div id="video-container" class="fixed inset-0 bg-black z-40 hidden flex items-center justify-center">
-        <video id="myVideo" class="w-full h-full max-h-screen object-contain" controls playsinline>
-            <source id="videoSource" src="" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        <!-- ব্যাক টু হোম বাটন -->
-        <a href="index.html" class="absolute top-4 left-4 bg-slate-800/80 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition backdrop-blur flex items-center gap-2">
-            <i class="fa-solid fa-arrow-left"></i> Back
-        </a>
+    <!-- প্রফেশনাল মুভি থিয়েটার মোড প্লেয়ার ইন্টারফেস -->
+    <div id="player-view-wrapper" class="fixed inset-0 bg-slate-950 z-40 hidden flex flex-col">
+        <!-- প্লেয়ার হেডার বার -->
+        <div class="w-full bg-slate-900/60 backdrop-blur border-b border-slate-800 px-6 py-4 flex justify-between items-center z-50">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <span class="text-slate-400 text-sm font-medium border-l border-slate-700 pl-3 hidden sm:inline">ZipStream Secure Cinema</span>
+            </div>
+            <div class="text-indigo-400 font-bold text-lg"><i class="fa-solid fa-shield-halved"></i> Protected Mode</div>
+        </div>
+
+        <!-- মেইন স্ট্রিমিং ও পার্ট এরিয়া -->
+        <div class="flex-grow flex flex-col lg:flex-row overflow-hidden">
+            <!-- বামে: প্রো ভিডিও প্লেয়ার স্ক্রিন -->
+            <div class="flex-grow bg-black flex items-center justify-center relative p-2 lg:p-4">
+                <video id="customVideoPlayer" class="w-full h-full max-h-[80vh] rounded-xl object-contain shadow-2xl" controls controlsList="nodownload nofullscreen" playsinline autocomplete="off">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            
+            <!-- ডানে বা নিচে: প্রফেশনাল পার্টস সিলেক্টর প্যানেল -->
+            <div class="w-full lg:w-[350px] bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 p-6 overflow-y-auto flex flex-col gap-4">
+                <div>
+                    <h3 class="text-lg font-extrabold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-list-ol text-indigo-400"></i> Video Episodes / Parts
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-1">যেকোনো পার্টে ক্লিক করে তাৎক্ষণিক প্লে করুন</p>
+                </div>
+                <!-- পার্ট বাটনগুলোর কন্টেইনার -->
+                <div id="video-parts-list" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-3">
+                    <!-- ডাইনামিক বাটন এখানে ইনসার্ট হবে -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Navbar -->
     <header id="navbar-header" class="container mx-auto px-6 py-4 flex justify-between items-center border-b border-slate-800">
         <div class="flex items-center gap-2 font-bold text-2xl tracking-wide text-indigo-400">
-            <i class="fa-solid fa-bolt animate-pulse"></i> ZipLink
+            <i class="fa-solid fa-bolt animate-pulse"></i> ZipStream
         </div>
-        <nav class="hidden md:flex gap-6 text-sm font-medium text-slate-400">
-            <a href="#" class="hover:text-indigo-400 transition">Home</a>
-            <a href="#" class="hover:text-indigo-400 transition">Features</a>
-            <a href="#" class="hover:text-indigo-400 transition">Premium</a>
-        </nav>
+        <div class="text-xs font-semibold px-3 py-1.5 bg-slate-800 border border-slate-700 text-slate-400 rounded-full">Dashboard v2.5</div>
     </header>
 
-    <!-- Main Content (Shortener UI) -->
-    <main id="main-content" class="container mx-auto px-4 py-12 flex-grow flex flex-col items-center justify-center">
+    <!-- Main Dashboard (Shortener & Dynamic Form) -->
+    <main id="main-content" class="container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
         <div class="max-w-2xl w-full text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Professional Video Shortener
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-3 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Multi-Part Video Shortener
             </h1>
-            <p class="text-slate-400 text-lg">
-                যেকোনো ভিডিও বা সাধারণ ইউআরএল শর্ট করুন। ভিডিও লিংক শর্ট করলে সেটি সরাসরি এই সাইটেই প্লে হবে!
+            <p class="text-slate-400 text-base">
+                আপনার মাল্টিপল ভিডিও লিংকের পার্টগুলো একসাথে যুক্ত করে প্রফেশনাল সুরক্ষিত শর্ট লিংক তৈরি করুন।
             </p>
         </div>
 
         <!-- Shortener Box -->
-        <div class="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-2xl max-w-2xl w-full">
-            <div class="flex flex-col sm:flex-row gap-3">
-                <div class="relative flex-grow">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">
-                        <i class="fa-solid fa-video text-indigo-400"></i>
-                    </span>
-                    <input type="url" id="longUrl" placeholder="এখানে ভিডিও লিংক বা যেকোনো ইউআরএল পেস্ট করুন..." 
-                        class="w-full pl-11 pr-4 py-4 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-indigo-500 text-slate-200 placeholder-slate-500 transition font-medium">
+        <div class="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-6 md:p-8 rounded-3xl shadow-2xl max-w-2xl w-full">
+            
+            <!-- ডাইনামিক ভিডিও পার্টস ইনপুট কন্টেইনার -->
+            <div id="dynamic-inputs-wrapper" class="space-y-4 mb-5">
+                <div class="flex flex-col gap-2 relative">
+                    <label class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Video Part 1 (Default):</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fa-solid fa-video"></i></span>
+                        <input type="url" class="video-url-input w-full pl-11 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-indigo-500 text-slate-200 placeholder-slate-600 transition" placeholder="https://example.com/part1.mp4">
+                    </div>
                 </div>
-                <button onclick="generateShortLink()" 
-                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-4 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer">
-                    Shorten <i class="fa-solid fa-arrow-right text-sm"></i>
+            </div>
+
+            <!-- ফর্ম কন্ট্রোল বাটনসমূহ -->
+            <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                <button onclick="addNewPartField()" class="w-full bg-slate-900 hover:bg-slate-750 text-indigo-400 border border-indigo-500/30 font-semibold px-6 py-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-plus"></i> Add Video Part
+                </button>
+                <button onclick="buildSecureStream()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold px-8 py-4 rounded-xl shadow-xl shadow-indigo-600/20 active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer">
+                    Generate Short Link <i class="fa-solid fa-wand-magic-sparkles"></i>
                 </button>
             </div>
 
             <!-- Result Box -->
-            <div id="resultBox" class="mt-6 p-4 bg-slate-900/80 border border-indigo-500/30 rounded-xl hidden flex-col sm:flex-row justify-between items-center gap-4">
+            <div id="resultBox" class="p-4 bg-slate-900/80 border border-indigo-500/30 rounded-2xl hidden flex-col sm:flex-row justify-between items-center gap-4 animate-fadeIn">
                 <div class="text-left w-full sm:w-auto">
-                    <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">আপনার শর্ট লিংক তৈরি:</span>
-                    <a id="shortUrl" href="#" target="_blank" class="text-emerald-400 font-semibold text-lg break-all hover:underline"></a>
+                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-1"><i class="fa-solid fa-circle-check"></i> Short Link Ready:</span>
+                    <a id="shortUrl" href="#" target="_blank" class="text-indigo-400 font-semibold text-base break-all hover:underline"></a>
                 </div>
-                <button onclick="copyLink()" id="copyBtn"
-                    class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-5 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2 cursor-pointer">
+                <button onclick="copyLink()" id="copyBtn" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer">
                     <i class="fa-regular fa-copy"></i> Copy
                 </button>
             </div>
@@ -196,42 +229,67 @@
     </main>
 
     <!-- Footer -->
-    <footer id="footer-section" class="border-t border-slate-800 py-6 text-center text-sm text-slate-500">
-        &copy; 2026 ZipLink. All Rights Reserved. Powered by GitHub Pages.
+    <footer id="footer-section" class="border-t border-slate-800 py-5 text-center text-xs text-slate-500">
+        &copy; 2026 ZipStream Secure CDN. All Rights Reserved. Powered by GitHub Pages.
     </footer>
 
-    <!-- Logic Script -->
+    <!-- UI Core Logic -->
     <script>
-        function generateShortLink() {
-            const longUrlInput = document.getElementById('longUrl').value.trim();
-            const resultBox = document.getElementById('resultBox');
-            const shortUrlA = document.getElementById('shortUrl');
-            const copyBtn = document.getElementById('copyBtn');
+        let fieldCount = 1;
 
-            if (!longUrlInput) {
-                alert("দয়া করে একটি সঠিক ভিডিও লিংক বা ইউআরএল প্রবেশ করান।");
-                return;
-            }
-            if (!longUrlInput.startsWith('http://') && !longUrlInput.startsWith('https://')) {
-                alert("লিংকটি অবশ্যই http:// বা https:// দিয়ে শুরু হতে হবে।");
-                return;
-            }
-
-            // অপ্টিমাইজড কম্প্রেশন
-            let optimizedUrl = longUrlInput
-                .replace('https://', 's://')
-                .replace('http://', 'h://');
-
-            const compressedKey = Base62.encode(optimizedUrl);
+        // নতুন পার্ট ফিল্ড ডাইনামিকালি অ্যাড করার ফাংশন
+        function addNewPartField() {
+            fieldCount++;
+            const container = document.getElementById('dynamic-inputs-wrapper');
             
-            // লাইভ ডোমেন পাথ সেটআপ
-            const finalShortLink = window.location.origin + window.location.pathname + "?q=" + compressedKey;
+            const newFieldDiv = document.createElement('div');
+            newFieldDiv.className = "flex flex-col gap-2 relative animate-fadeIn mt-3";
+            newFieldDiv.id = `field-group-${fieldCount}`;
+            newFieldDiv.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <label class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Video Part ${fieldCount}:</label>
+                    <button onclick="removeField(${fieldCount})" class="text-xs text-rose-400 hover:underline flex items-center gap-1 cursor-pointer"><i class="fa-solid fa-trash-can"></i> Remove</button>
+                </div>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fa-solid fa-video"></i></span>
+                    <input type="url" class="video-url-input w-full pl-11 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-indigo-500 text-slate-200 placeholder-slate-600 transition" placeholder="https://example.com/part${fieldCount}.mp4">
+                </div>
+            `;
+            container.appendChild(newFieldDiv);
+        }
 
+        function removeField(id) {
+            const field = document.getElementById(`field-group-${id}`);
+            if (field) field.remove();
+        }
+
+        // মাল্টি-পার্ট অবজেক্ট লিংক বিল্ডার
+        function buildSecureStream() {
+            const inputs = document.querySelectorAll('.video-url-input');
+            const urlArray = [];
+
+            inputs.forEach(input => {
+                const value = input.value.trim();
+                if (value && (value.startsWith('http://') || value.startsWith('https://'))) {
+                    urlArray.push(value);
+                }
+            });
+
+            if (urlArray.length === 0) {
+                alert("দয়া করে কমপক্ষে ১টি সঠিক ভিডিও লিংক প্রদান করুন।");
+                return;
+            }
+
+            // সম্পূর্ণ ডাটা স্ট্রাকচার এনকোড করা
+            const encodedStream = URLDataEngine.encode(urlArray);
+            const finalShortLink = window.location.origin + window.location.pathname + "?stream=" + encodedStream;
+
+            const shortUrlA = document.getElementById('shortUrl');
             shortUrlA.textContent = finalShortLink;
             shortUrlA.href = finalShortLink;
-            
-            copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
-            resultBox.style.display = 'flex';
+
+            document.getElementById('copyBtn').innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+            document.getElementById('resultBox').style.display = 'flex';
         }
 
         function copyLink() {
