@@ -1,1 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZipLink | Professional URL Shortener</title>
+    <!-- Tailwind CSS for Premium UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        // আল্ট্রা-শর্ট Base62 কম্প্রেশন ইঞ্জিন
+        const Base62 = {
+            charset: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+            encode: function(str) {
+                let output = '';
+                for (let i = 0; i < str.length; i++) {
+                    let c = str.charCodeAt(i);
+                    output += this.charset[c % 62] + this.charset[Math.floor(c / 62) % 62];
+                }
+                return output;
+            },
+            decode: function(str) {
+                let output = '';
+                for (let i = 0; i < str.length; i += 2) {
+                    let p1 = this.charset.indexOf(str[i]);
+                    let p2 = this.charset.indexOf(str[i+1]);
+                    output += String.fromCharCode(p1 + (p2 * 62));
+                }
+                return output;
+            }
+        };
 
+        // ইনস্ট্যান্ট রিডাইরেক্ট চেকার (উইন্ডো লোড হওয়ার আগে রান হবে)
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shortKey = urlParams.get('q');
+            if (shortKey) {
+                try {
+                    let originalUrl = Base62.decode(shortKey);
+                    if (originalUrl.startsWith('s://')) originalUrl = originalUrl.replace('s://', 'https://');
+                    else if (originalUrl.startsWith('h://')) originalUrl = originalUrl.replace('h://', 'http://');
+                    
+                    if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
+                        window.location.replace(originalUrl);
+                    }
+                } catch (e) {
+                    console.error("Redirect error:", e);
+                }
+            }
+        })();
+    </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- Navbar -->
+    <header class="container mx-auto px-6 py-4 flex justify-between items-center border-b border-slate-800">
+        <div class="flex items-center gap-2 font-bold text-2xl tracking-wide text-indigo-400">
+            <i class="fa-solid fa-bolt animate-pulse"></i> ZipLink
+        </div>
+        <nav class="hidden md:flex gap-6 text-sm font-medium text-slate-400">
+            <a href="#" class="hover:text-indigo-400 transition">Home</a>
+            <a href="#" class="hover:text-indigo-400 transition">Features</a>
+            <a href="#" class="hover:text-indigo-400 transition">API</a>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12 flex-grow flex flex-col items-center justify-center">
+        <div class="max-w-2xl w-full text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                URL Shortener
+            </h1>
+            <p class="text-slate-400 text-lg">
+                আপনার বড় এবং জটিল লিংকগুলোকে প্রফেশনাল ও শর্ট লিংকে রূপান্তর করুন সম্পূর্ণ ফ্রিতে।
+            </p>
+        </div>
+
+        <!-- Shortener Box -->
+        <div class="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-2xl max-w-2xl w-full">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">
+                        <i class="fa-solid fa-link"></i>
+                    </span>
+                    <input type="url" id="longUrl" placeholder="আপনার লং ইউআরএলটি এখানে পেস্ট করুন..." 
+                        class="w-full pl-11 pr-4 py-4 bg-slate-900 border border-slate-700 rounded-xl outline-none focus:border-indigo-500 text-slate-200 placeholder-slate-500 transition font-medium">
+                </div>
+                <button onclick="generateShortLink()" 
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-4 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer">
+                    Shorten <i class="fa-solid fa-arrow-right text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Result Box -->
+            <div id="resultBox" class="mt-6 p-4 bg-slate-900/80 border border-indigo-500/30 rounded-xl hidden flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="text-left w-full sm:w-auto">
+                    <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">আপনার শর্ট লিংক:</span>
+                    <a id="shortUrl" href="#" target="_blank" class="text-emerald-400 font-semibold text-lg break-all hover:underline"></a>
+                </div>
+                <button onclick="copyLink()" id="copyBtn"
+                    class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-5 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-regular fa-copy"></i> Copy
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-6 text-center text-sm text-slate-500">
+        &copy; 2026 ZipLink. All Rights Reserved. Powered by GitHub Pages.
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        function generateShortLink() {
+            const longUrlInput = document.getElementById('longUrl').value.trim();
+            const resultBox = document.getElementById('resultBox');
+            const shortUrlA = document.getElementById('shortUrl');
+            const copyBtn = document.getElementById('copyBtn');
+
+            if (!longUrlInput) {
+                alert("দয়া করে একটি সঠিক লিংক দিন।");
+                return;
+            }
+            if (!longUrlInput.startsWith('http://') && !longUrlInput.startsWith('https://')) {
+                alert("লিংকটি অবশ্যই http:// বা https:// দিয়ে শুরু হতে হবে।");
+                return;
+            }
+
+            // অপ্টিমাইজড কম্প্রেশন
+            let optimizedUrl = longUrlInput
+                .replace('https://', 's://')
+                .replace('http://', 'h://');
+
+            const compressedKey = Base62.encode(optimizedUrl);
+            
+            // গিটহাব পেজের কারেন্ট রুট ইউআরএল ফিক্স
+            const finalShortLink = window.location.origin + window.location.pathname + "?q=" + compressedKey;
+
+            shortUrlA.textContent = finalShortLink;
+            shortUrlA.href = finalShortLink;
+            
+            copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+            resultBox.style.display = 'flex';
+        }
+
+        function copyLink() {
+            const shortUrlText = document.getElementById('shortUrl').textContent;
+            const copyBtn = document.getElementById('copyBtn');
+            
+            navigator.clipboard.writeText(shortUrlText).then(function() {
+                copyBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copied!';
+            }, function() {
+                alert("ম্যানুয়ালি কপি করুন।");
+            });
+        }
+    </script>
+</body>
+</html>
