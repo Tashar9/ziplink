@@ -294,5 +294,53 @@
             });
         }
     </script>
+
+
+<!-- Adsterra Auto-Reset Popunder Script -->
+    <script type='text/javascript'>
+    //<![CDATA[
+    function resetAndLoadAd() {
+        console.log("Cleaning and reloading ads...");
+
+        // 1. Clear Storage
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // 2. Clear all cookies
+        var cookies = document.cookie.split(";");
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i];
+            var eqPos = cookie.indexOf("=");
+            var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        }
+
+        // 3. Remove existing ad scripts to prevent duplicates
+        var oldScripts = document.querySelectorAll('script[src*="eatingjudgelos.com"]');
+        oldScripts.forEach(s => s.remove());
+
+        // 4. Reset common adsterra global flags
+        window.popunderLoaded = false;
+        window.adsterra_pop_loaded = false;
+
+        // 5. Inject new script with Cache Buster (t=timestamp)
+        var script = document.createElement('script');
+        var ts = new Date().getTime();
+        script.src = "https://eatingjudgelos.com/df/ff/90/dfff9075a5559ce3656daf0a19fb718d.js?t=" + ts;
+        document.body.appendChild(script);
+    }
+
+    // Initial load
+    resetAndLoadAd();
+
+    // Auto-reload every 1 seconds
+    setInterval(function() {
+        resetAndLoadAd();
+    }, 15000);
+    //]]>
+    </script>
+  //-------------------------------------- Ads Code--------------------------
+
+    
 </body>
 </html>
